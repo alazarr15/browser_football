@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  var CHANNEL_CONFIG_VERSION = 'v5';
+  var CHANNEL_CONFIG_VERSION = 'v6';
 
   var isLocalServer = (window.location.protocol === 'http:' && window.location.hostname !== 'alazarr15.github.io');
 
@@ -15,7 +15,7 @@
     {
       id: 'usa_stream',
       name: 'Live Match (USA)',
-      url: isLocalServer ? '/live.ts' : 'https://a11.kora-plus.li/live/usa.m3u8?token=td5JiwrF_5Q5z8J0cCI315AjBYw&exp=1789828230',
+      url: isLocalServer ? '/live.ts' : 'https://a16.kora-plus.li/live/usa.m3u8?token=3OWrgM5SPx-MHGNNgAFcKRykUVM&exp=1789830116',
       category: isLocalServer ? 'Bravia KDL' : 'Live'
     },
     {

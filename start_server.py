@@ -10,7 +10,7 @@ import re
 PORT = 8080
 
 # Default live match stream
-LIVE_STREAM_M3U8 = "https://a11.kora-plus.li/live/usa.m3u8?token=td5JiwrF_5Q5z8J0cCI315AjBYw&exp=1789828230"
+LIVE_STREAM_M3U8 = "https://a16.kora-plus.li/live/usa.m3u8?token=3OWrgM5SPx-MHGNNgAFcKRykUVM&exp=1789830116"
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
