@@ -15,9 +15,19 @@
       <video id="tv-video" playsinline webkit-playsinline autoplay></video>
       
       <!-- Loading & Error Overlay -->
-      <div id="status-overlay" class="status-overlay hidden">
-        <div class="spinner"></div>
-        <div id="status-text" class="status-text">Loading Stream...</div>
+      <div id="status-overlay" class="status-overlay">
+        <div class="spinner" id="status-spinner"></div>
+        <div id="status-text" class="status-text">Connecting Stream...</div>
+        <div id="bravia-tip" class="bravia-tip hidden">
+          <p class="bravia-warning">&#9888; Sony Bravia Built-in Browser Detected</p>
+          <p class="bravia-desc">This TV's built-in Internet Browser has no HLS (.m3u8) video decoder.</p>
+          <div class="bravia-steps">
+            <p><strong>To watch on this 42" TV without lag:</strong></p>
+            <p>1. On your Windows PC, press <kbd>Windows Key + K</kbd></p>
+            <p>2. Select <strong>"Sony Bravia"</strong> from the Cast list.</p>
+            <p>3. Your match plays directly on the TV in full 1080p with audio!</p>
+          </div>
+        </div>
       </div>
     </div>
 

@@ -25,8 +25,10 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: var(--bg-color);
-  color: var(--text-primary);
+  background: #000000;
+  background-color: var(--bg-color, #000000);
+  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 20px; /* Scaled for 42" 10-foot distance */
   user-select: none;
@@ -35,14 +37,16 @@ html, body {
 
 /* Base App Shell */
 #app-container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  background: #000000;
+  background: transparent;
 }
 
-/* Video Wrapper */
+/* Video Wrapper - Transparent for TV hardware overlay punch-hole */
 .video-wrapper {
   position: absolute;
   top: 0;
@@ -53,14 +57,14 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #000;
+  background: transparent;
 }
 
 video {
   width: 100%;
   height: 100%;
   object-fit: contain; /* Default: fit aspect ratio */
-  background: #000;
+  background: transparent;
   outline: none;
 }
 
@@ -78,22 +82,62 @@ video.aspect-cover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  -webkit-transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.85);
+  background: #0a0f19;
+  background: rgba(10, 15, 25, 0.95);
   padding: 24px 36px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   z-index: 5;
-  pointer-events: none;
-  transition: opacity var(--transition-fast);
+  text-align: center;
+  max-width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
 }
 
 .status-overlay.hidden {
-  opacity: 0;
-  display: none;
+  display: none !important;
+}
+
+/* Sony Bravia Diagnostics Helper Box */
+.bravia-tip {
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: rgba(229, 9, 20, 0.15);
+  border: 1px solid #e50914;
+  border-radius: 8px;
+  text-align: left;
+  max-width: 550px;
+}
+
+.bravia-tip.hidden {
+  display: none !important;
+}
+
+.bravia-warning {
+  color: #ff5252;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.bravia-desc {
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.bravia-steps {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.bravia-steps strong {
+  color: #00e676;
 }
 
 .spinner {
