@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Optimized for TV viewports: 1080p native scaling with responsiveness -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TV Live Stream Player</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="tv-mode">
+  <div id="app-container">
+    <!-- Video Player Element -->
+    <div class="video-wrapper">
+      <video id="tv-video" playsinline webkit-playsinline autoplay></video>
+      
+      <!-- Loading & Error Overlay -->
+      <div id="status-overlay" class="status-overlay hidden">
+        <div class="spinner"></div>
+        <div id="status-text" class="status-text">Loading Stream...</div>
+      </div>
+    </div>
+
+    <!-- On-Screen Display (OSD) -->
+    <div id="osd" class="osd visible">
+      <!-- Top Header -->
+      <header class="osd-top">
+        <div class="channel-info">
+          <span class="live-pill"><span class="dot"></span> LIVE</span>
+          <h1 id="current-channel-name" class="channel-title">TNT Sports 1</h1>
+        </div>
+        <div class="clock-info">
+          <span id="digital-clock" class="digital-clock">00:00</span>
+        </div>
+      </header>
+
+      <!-- Center Click Area to Wake Controls -->
+      <div class="osd-middle" id="osd-middle-trigger"></div>
+
+      <!-- Bottom Controls Bar -->
+      <footer class="osd-bottom">
+        <div class="controls-row">
+          <!-- Play / Pause -->
+          <button id="btn-play-pause" class="tv-btn" tabindex="1" title="Play/Pause">
+            <span class="btn-icon" id="play-icon">&#10074;&#10074;</span>
+            <span class="btn-label">Pause</span>
+          </button>
+
+          <!-- Channel List Drawer Toggle -->
+          <button id="btn-channels" class="tv-btn" tabindex="2" title="Channels List">
+            <span class="btn-icon">&#9776;</span>
+            <span class="btn-label">Channels</span>
+          </button>
+
+          <!-- Add Stream URL -->
+          <button id="btn-add-stream" class="tv-btn" tabindex="3" title="Add Custom Stream">
+            <span class="btn-icon">&#65291;</span>
+            <span class="btn-label">Add Stream</span>
+          </button>
+
+          <!-- Reload / Reconnect Stream -->
+          <button id="btn-reload" class="tv-btn" tabindex="4" title="Reload Stream">
+            <span class="btn-icon">&#8635;</span>
+            <span class="btn-label">Reload</span>
+          </button>
+
+          <!-- Aspect Ratio Switcher (Fit / Zoom / Stretch) -->
+          <button id="btn-aspect" class="tv-btn" tabindex="5" title="Aspect Ratio">
+            <span class="btn-icon">&#x26F6;</span>
+            <span class="btn-label" id="aspect-label">Fit</span>
+          </button>
+
+          <!-- Fullscreen Toggle -->
+          <button id="btn-fullscreen" class="tv-btn" tabindex="6" title="Fullscreen">
+            <span class="btn-icon">&#x26F6;</span>
+            <span class="btn-label">Fullscreen</span>
+          </button>
+        </div>
+
+        <!-- TV Remote Shortcuts Hint Bar -->
+        <div class="tv-remote-hints">
+          <span class="hint-item"><kbd>OK / Enter</kbd> Select</span>
+          <span class="hint-item"><kbd>&uarr; &darr; &larr; &rarr;</kbd> Navigate</span>
+          <span class="hint-item"><kbd>BACK / ESC</kbd> Close / Return</span>
+          <span class="hint-item"><kbd>Space</kbd> Play/Pause</span>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Side Channel Drawer -->
+    <aside id="channel-drawer" class="channel-drawer hidden">
+      <div class="drawer-header">
+        <h2>Channel Guide</h2>
+        <button id="btn-close-drawer" class="drawer-close-btn" tabindex="10">&times;</button>
+      </div>
+      <div class="drawer-content">
+        <ul id="channel-list" class="channel-list" role="listbox">
+          <!-- Dynamically populated -->
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Modal: Add Custom Stream -->
+    <div id="modal-add-stream" class="modal-overlay hidden">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Add Custom Stream</h3>
+          <button id="btn-close-modal" class="modal-close-btn" tabindex="30">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="input-stream-name">Channel Name</label>
+            <input type="text" id="input-stream-name" placeholder="e.g. TNT Sports 2" tabindex="31" />
+          </div>
+          <div class="form-group">
+            <label for="input-stream-url">Stream URL (.m3u8)</label>
+            <input type="url" id="input-stream-url" placeholder="https://example.com/stream.m3u8" tabindex="32" />
+          </div>
+          <div class="modal-actions">
+            <button id="btn-save-stream" class="tv-btn tv-btn-primary" tabindex="33">Save Channel</button>
+            <button id="btn-cancel-stream" class="tv-btn tv-btn-secondary" tabindex="34">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="player.js"></script>
+</body>
+</html>

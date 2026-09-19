@@ -1,0 +1,517 @@
+/* ============================================================
+   Smart TV Optimized Stylesheet (10-Foot UI, Lightweight)
+   ============================================================ */
+
+:root {
+  --bg-color: #000000;
+  --osd-bg: rgba(10, 15, 25, 0.90);
+  --osd-card-bg: #161e2e;
+  --accent-color: #00e676; /* High-visibility TV green */
+  --accent-glow: rgba(0, 230, 118, 0.6);
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --border-radius: 8px;
+  --transition-fast: 0.2s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 20px; /* Scaled for 42" 10-foot distance */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Base App Shell */
+#app-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000000;
+}
+
+/* Video Wrapper */
+.video-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Default: fit aspect ratio */
+  background: #000;
+  outline: none;
+}
+
+/* Aspect Modes */
+video.aspect-fill {
+  object-fit: fill;
+}
+video.aspect-cover {
+  object-fit: cover;
+}
+
+/* Status / Buffer / Error Overlay */
+.status-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 24px 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.status-overlay.hidden {
+  opacity: 0;
+  display: none;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.status-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   OSD (On-Screen Display)
+   ============================================================ */
+.osd {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none; /* Middle transparent clicks pass through */
+  opacity: 0;
+  transform: translateZ(0);
+  transition: opacity 0.35s ease;
+}
+
+.osd.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* OSD Header */
+.osd-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 40px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 70%, transparent 100%);
+}
+
+.channel-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #e50914;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.live-pill .dot {
+  width: 8px;
+  height: 8px;
+  background-color: #fff;
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.channel-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.clock-info {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.osd-middle {
+  flex: 1;
+}
+
+/* OSD Footer Controls */
+.osd-bottom {
+  padding: 20px 40px 30px 40px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 75%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* TV Button Styles (Large touch/focus targets for remote) */
+.tv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 2px solid transparent;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease-in-out;
+  transform: scale(1);
+}
+
+/* TV Focus State - Critical for D-Pad navigation */
+.tv-btn:focus,
+.tv-btn.focused {
+  background: #ffffff;
+  color: #000000;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 20px var(--accent-glow);
+  transform: scale(1.08);
+  z-index: 2;
+}
+
+.btn-icon {
+  font-size: 1.25rem;
+}
+
+/* Primary & Secondary Button Variations */
+.tv-btn-primary {
+  background: var(--accent-color);
+  color: #000;
+}
+.tv-btn-primary:focus,
+.tv-btn-primary.focused {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 0 24px #fff;
+}
+
+.tv-btn-secondary {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Remote Control Key Hints */
+.tv-remote-hints {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+}
+
+.hint-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+kbd {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* ============================================================
+   Side Channel Drawer
+   ============================================================ */
+.channel-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 420px;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.96);
+  border-right: 2px solid rgba(255, 255, 255, 0.12);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 10px 0 40px rgba(0, 0, 0, 0.8);
+  transform: translateX(0);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.channel-drawer.hidden {
+  transform: translateX(-105%);
+  pointer-events: none;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.drawer-header h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.drawer-close-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.drawer-close-btn:focus {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--accent-color);
+}
+
+.drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.channel-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.channel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.channel-item:focus,
+.channel-item.focused {
+  background: #ffffff;
+  color: #000;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 16px var(--accent-glow);
+  transform: scale(1.03);
+}
+
+.channel-item.active {
+  border-left: 5px solid var(--accent-color);
+}
+
+.channel-item .channel-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.channel-item .channel-tag {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: rgba(0,0,0,0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.channel-item:focus .channel-tag {
+  color: #333;
+}
+
+/* ============================================================
+   Modal: Add Stream
+   ============================================================ */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
+.modal-dialog {
+  background: #1e293b;
+  width: 600px;
+  max-width: 90vw;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.6rem;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.modal-close-btn:focus {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--accent-color);
+}
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.form-group input {
+  background: #0f172a;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 14px 16px;
+  font-size: 1rem;
+  color: #fff;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 12px var(--accent-glow);
+  background: #111827;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* ============================================================
+   TV Responsive Adjustments (720p / 1080p / 4K)
+   ============================================================ */
+@media (max-width: 1280px) {
+  html, body {
+    font-size: 16px;
+  }
+  .channel-drawer {
+    width: 320px;
+  }
+}
+
+@media (min-width: 2560px) {
+  html, body {
+    font-size: 26px;
+  }
+  .channel-drawer {
+    width: 580px;
+  }
+}
