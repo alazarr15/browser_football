@@ -242,18 +242,37 @@
       hlsInstance = null;
     }
 
-    // Check 1: Native HLS Support (Tizen, webOS, Safari/WebKit, Android Chrome)
-    // Most Smart TVs hardware-accelerate this natively inside <video src>
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    // Attempt 1: Direct native hardware playback via <video src>
+    // Essential for Smart TVs (Tizen, WebOS, Hisense, Opera TV) as it bypasses XHR CORS
+    try {
+      video.pause();
+      video.removeAttribute('src');
       video.src = url;
-      video.play().catch(function (err) {
-        console.warn('Native autoplay blocked or failed:', err);
-        showStatus('Press Play (OK) to start');
-      });
-      return;
+      video.load(); // Required by older Smart TV engines
+
+      var playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(function () {
+          hideStatus();
+        }).catch(function (err) {
+          console.warn('Autoplay blocked or waiting for user interaction:', err);
+          showStatus('Press OK / Play to Start');
+        });
+      }
+    } catch (e) {
+      console.warn('Native video assign error:', e);
     }
 
-    // Check 2: Dynamic load of lightweight HLS.js for browsers without native HLS but with MSE
+    // Fallback: If native video errors out, attempt HLS.js
+    var onNativeError = function () {
+      video.removeEventListener('error', onNativeError);
+      console.log('Native playback failed, attempting HLS.js fallback...');
+      fallbackToHls(url);
+    };
+    video.addEventListener('error', onNativeError, { once: true });
+  }
+
+  function fallbackToHls(url) {
     if (window.Hls) {
       initHls(url);
     } else {
@@ -261,11 +280,7 @@
         if (success && window.Hls && window.Hls.isSupported()) {
           initHls(url);
         } else {
-          // Fallback: direct src assignment as last resort for embedded browser quirks
-          video.src = url;
-          video.play().catch(function (e) {
-            showStatus('Playback error. Check stream link.');
-          });
+          showStatus('Stream offline or token expired. Press Reload.');
         }
       });
     }
@@ -273,8 +288,7 @@
 
   function initHls(url) {
     if (!window.Hls.isSupported()) {
-      video.src = url;
-      video.play().catch(function () {});
+      showStatus('HLS playback not supported by browser.');
       return;
     }
 
@@ -290,7 +304,9 @@
     hlsInstance.attachMedia(video);
 
     hlsInstance.on(window.Hls.Events.MANIFEST_PARSED, function () {
-      video.play().catch(function () {});
+      video.play().catch(function () {
+        showStatus('Press OK / Play to Start');
+      });
       hideStatus();
     });
 
@@ -298,7 +314,7 @@
       if (data.fatal) {
         switch (data.type) {
           case window.Hls.ErrorTypes.NETWORK_ERROR:
-            showStatus('Network error. Reconnecting...');
+            showStatus('Network/Stream error. Retrying...');
             hlsInstance.startLoad();
             break;
           case window.Hls.ErrorTypes.MEDIA_ERROR:
@@ -306,7 +322,7 @@
             hlsInstance.recoverMediaError();
             break;
           default:
-            showStatus('Stream error: ' + data.details);
+            showStatus('Stream offline or token expired. Press Reload.');
             hlsInstance.destroy();
             break;
         }
