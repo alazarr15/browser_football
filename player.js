@@ -6,15 +6,17 @@
 (function () {
   'use strict';
 
-  var CHANNEL_CONFIG_VERSION = 'v4';
+  var CHANNEL_CONFIG_VERSION = 'v5';
+
+  var isLocalServer = (window.location.protocol === 'http:' && window.location.hostname !== 'alazarr15.github.io');
 
   // --- Default Channel List ---
   var DEFAULT_CHANNELS = [
     {
       id: 'usa_stream',
       name: 'Live Match (USA)',
-      url: 'https://a11.kora-plus.li/live/usa.m3u8?token=td5JiwrF_5Q5z8J0cCI315AjBYw&exp=1789828230',
-      category: 'Live'
+      url: isLocalServer ? '/live.ts' : 'https://a11.kora-plus.li/live/usa.m3u8?token=td5JiwrF_5Q5z8J0cCI315AjBYw&exp=1789828230',
+      category: isLocalServer ? 'Bravia KDL' : 'Live'
     },
     {
       id: 'tnt1',
