@@ -6,8 +6,16 @@
 (function () {
   'use strict';
 
+  var CHANNEL_CONFIG_VERSION = 'v2';
+
   // --- Default Channel List ---
   var DEFAULT_CHANNELS = [
+    {
+      id: 'usa_stream',
+      name: 'Live Match (USA)',
+      url: 'https://a11.kora-plus.li/live/usa.m3u8?token=td5JiwrF_5Q5z8J0cCI315AjBYw&exp=1789828230',
+      category: 'Live'
+    },
     {
       id: 'tnt1',
       name: 'TNT Sports 1',
@@ -59,8 +67,9 @@
   // --- Initialize Storage ---
   function loadChannels() {
     try {
+      var currentVersion = localStorage.getItem('tv_stream_version');
       var saved = localStorage.getItem('tv_stream_channels');
-      if (saved) {
+      if (saved && currentVersion === CHANNEL_CONFIG_VERSION) {
         channels = JSON.parse(saved);
       }
     } catch (e) {
@@ -75,6 +84,7 @@
 
   function saveChannels() {
     try {
+      localStorage.setItem('tv_stream_version', CHANNEL_CONFIG_VERSION);
       localStorage.setItem('tv_stream_channels', JSON.stringify(channels));
     } catch (e) {
       console.warn('Failed to save channels to localStorage:', e);
