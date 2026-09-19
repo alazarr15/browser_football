@@ -1,12 +1,12 @@
 /**
  * Smart TV Live Football / Sports Stream Player
- * Ultra-lightweight, zero-framework, hardware-accelerated HLS & remote control support.
+ * 100% Strict ES5 Compatible for Embedded Smart TV Browsers
  */
 
 (function () {
   'use strict';
 
-  var CHANNEL_CONFIG_VERSION = 'v2';
+  var CHANNEL_CONFIG_VERSION = 'v3';
 
   // --- Default Channel List ---
   var DEFAULT_CHANNELS = [
@@ -24,11 +24,17 @@
     }
   ];
 
+  // --- Helper: Pad 2 digits (Strict ES5, replaces padStart) ---
+  function pad2(num) {
+    var s = String(num);
+    return s.length < 2 ? '0' + s : s;
+  }
+
   // --- State ---
   var channels = [];
   var currentChannelIndex = 0;
   var osdTimeout = null;
-  var OSD_DURATION = 4000; // Auto-hide OSD after 4s
+  var OSD_DURATION = 4000;
   var hlsInstance = null;
   var aspectModes = ['fit', 'fill', 'cover'];
   var currentAspectIndex = 0;
@@ -73,7 +79,7 @@
         channels = JSON.parse(saved);
       }
     } catch (e) {
-      console.warn('LocalStorage unavailable or disabled:', e);
+      console.warn('LocalStorage error:', e);
     }
 
     if (!channels || channels.length === 0) {
@@ -87,17 +93,21 @@
       localStorage.setItem('tv_stream_version', CHANNEL_CONFIG_VERSION);
       localStorage.setItem('tv_stream_channels', JSON.stringify(channels));
     } catch (e) {
-      console.warn('Failed to save channels to localStorage:', e);
+      console.warn('Failed to save to localStorage:', e);
     }
   }
 
-  // --- Digital Clock ---
+  // --- Digital Clock (Strict ES5) ---
   function updateClock() {
-    var now = new Date();
-    var hours = String(now.getHours()).padStart(2, '0');
-    var minutes = String(now.getMinutes()).padStart(2, '0');
-    if (clockEl) {
-      clockEl.textContent = hours + ':' + minutes;
+    try {
+      var now = new Date();
+      var hours = pad2(now.getHours());
+      var minutes = pad2(now.getMinutes());
+      if (clockEl) {
+        clockEl.textContent = hours + ':' + minutes;
+      }
+    } catch (e) {
+      console.warn('Clock error:', e);
     }
   }
   setInterval(updateClock, 1000);
@@ -105,17 +115,17 @@
 
   // --- Status & Buffering Indicators ---
   function showStatus(text) {
-    statusText.textContent = text;
-    statusOverlay.classList.remove('hidden');
+    if (statusText) statusText.textContent = text;
+    if (statusOverlay) statusOverlay.classList.remove('hidden');
   }
 
   function hideStatus() {
-    statusOverlay.classList.add('hidden');
+    if (statusOverlay) statusOverlay.classList.add('hidden');
   }
 
   // --- OSD Visibility Control ---
   function wakeOSD() {
-    osd.classList.add('visible');
+    if (osd) osd.classList.add('visible');
     resetOSDTimeout();
   }
 
@@ -124,105 +134,108 @@
       clearTimeout(osdTimeout);
     }
 
-    // Do not auto-hide if drawer or modal is open, or if video is paused
-    var isDrawerOpen = !channelDrawer.classList.contains('hidden');
-    var isModalOpen = !modalAddStream.classList.contains('hidden');
-    if (isDrawerOpen || isModalOpen || video.paused) {
+    var isDrawerOpen = channelDrawer && !channelDrawer.classList.contains('hidden');
+    var isModalOpen = modalAddStream && !modalAddStream.classList.contains('hidden');
+    if (isDrawerOpen || isModalOpen || (video && video.paused)) {
       return;
     }
 
     osdTimeout = setTimeout(function () {
-      osd.classList.remove('visible');
+      if (osd) osd.classList.remove('visible');
     }, OSD_DURATION);
   }
 
   // --- Channel Drawer ---
   function renderChannelList() {
+    if (!channelListEl) return;
     channelListEl.innerHTML = '';
-    channels.forEach(function (ch, idx) {
-      var li = document.createElement('li');
-      li.className = 'channel-item' + (idx === currentChannelIndex ? ' active' : '');
-      li.tabIndex = 20 + idx;
-      li.setAttribute('role', 'option');
+    for (var i = 0; i < channels.length; i++) {
+      (function (idx) {
+        var ch = channels[idx];
+        var li = document.createElement('li');
+        li.className = 'channel-item' + (idx === currentChannelIndex ? ' active' : '');
+        li.tabIndex = 20 + idx;
 
-      var nameSpan = document.createElement('span');
-      nameSpan.className = 'channel-name';
-      nameSpan.textContent = (idx + 1) + '. ' + ch.name;
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'channel-name';
+        nameSpan.textContent = (idx + 1) + '. ' + ch.name;
 
-      var tagSpan = document.createElement('span');
-      tagSpan.className = 'channel-tag';
-      tagSpan.textContent = ch.category || 'Live';
+        var tagSpan = document.createElement('span');
+        tagSpan.className = 'channel-tag';
+        tagSpan.textContent = ch.category || 'Live';
 
-      li.appendChild(nameSpan);
-      li.appendChild(tagSpan);
+        li.appendChild(nameSpan);
+        li.appendChild(tagSpan);
 
-      li.addEventListener('click', function () {
-        selectChannel(idx);
-        closeDrawer();
-      });
-
-      li.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.keyCode === 13) {
+        li.onclick = function () {
           selectChannel(idx);
           closeDrawer();
-        }
-      });
+        };
 
-      channelListEl.appendChild(li);
-    });
+        li.onkeydown = function (e) {
+          var code = e.keyCode || e.which;
+          if (code === 13) {
+            selectChannel(idx);
+            closeDrawer();
+          }
+        };
+
+        channelListEl.appendChild(li);
+      })(i);
+    }
   }
 
   function openDrawer() {
     renderChannelList();
-    channelDrawer.classList.remove('hidden');
+    if (channelDrawer) channelDrawer.classList.remove('hidden');
     wakeOSD();
 
-    // Focus active or first item in drawer for remote control
     setTimeout(function () {
       var activeItem = channelListEl.querySelector('.channel-item.active') || channelListEl.querySelector('.channel-item');
       if (activeItem) {
         activeItem.focus();
-      } else {
+      } else if (btnCloseDrawer) {
         btnCloseDrawer.focus();
       }
     }, 100);
   }
 
   function closeDrawer() {
-    channelDrawer.classList.add('hidden');
-    btnChannels.focus();
+    if (channelDrawer) channelDrawer.classList.add('hidden');
+    if (btnChannels) btnChannels.focus();
     resetOSDTimeout();
   }
 
   // --- Add Stream Modal ---
   function openAddModal() {
-    modalAddStream.classList.remove('hidden');
+    if (modalAddStream) modalAddStream.classList.remove('hidden');
     wakeOSD();
-    inputStreamName.value = '';
-    inputStreamUrl.value = '';
+    if (inputStreamName) inputStreamName.value = '';
+    if (inputStreamUrl) inputStreamUrl.value = '';
     setTimeout(function () {
-      inputStreamName.focus();
+      if (inputStreamName) inputStreamName.focus();
     }, 100);
   }
 
   function closeAddModal() {
-    modalAddStream.classList.add('hidden');
-    btnAddStream.focus();
+    if (modalAddStream) modalAddStream.classList.add('hidden');
+    if (btnAddStream) btnAddStream.focus();
     resetOSDTimeout();
   }
 
   function saveCustomStream() {
-    var name = inputStreamName.value.trim() || 'Custom Channel ' + (channels.length + 1);
-    var url = inputStreamUrl.value.trim();
+    var name = (inputStreamName && inputStreamName.value) ? inputStreamName.value.replace(/^\s+|\s+$/g, '') : '';
+    var url = (inputStreamUrl && inputStreamUrl.value) ? inputStreamUrl.value.replace(/^\s+|\s+$/g, '') : '';
 
+    if (!name) name = 'Custom Channel ' + (channels.length + 1);
     if (!url) {
       alert('Please enter a valid .m3u8 stream URL');
-      inputStreamUrl.focus();
+      if (inputStreamUrl) inputStreamUrl.focus();
       return;
     }
 
     channels.push({
-      id: 'custom_' + Date.now(),
+      id: 'custom_' + new Date().getTime(),
       name: name,
       url: url,
       category: 'Custom'
@@ -233,43 +246,59 @@
     selectChannel(channels.length - 1);
   }
 
-  // --- Video Playback Engine (Hardware Native + Hls.js Fallback) ---
+  // --- Safe Video Play Helper ---
+  function safePlay() {
+    if (!video) return;
+    try {
+      var promise = video.play();
+      if (promise && typeof promise.then === 'function') {
+        promise.then(function () {
+          hideStatus();
+        }).catch(function (err) {
+          console.warn('Autoplay blocked:', err);
+          showStatus('Press OK / Play to Start');
+        });
+      } else {
+        // Older browser returning undefined
+        hideStatus();
+      }
+    } catch (e) {
+      console.warn('Play exception:', e);
+      showStatus('Press OK / Play to Start');
+    }
+  }
+
+  // --- Video Playback Engine (Strict ES5) ---
   function playStream(url) {
     showStatus('Connecting Stream...');
 
     if (hlsInstance) {
-      hlsInstance.destroy();
+      try {
+        hlsInstance.destroy();
+      } catch (e) {}
       hlsInstance = null;
     }
 
-    // Attempt 1: Direct native hardware playback via <video src>
-    // Essential for Smart TVs (Tizen, WebOS, Hisense, Opera TV) as it bypasses XHR CORS
+    // Step 1: Assign direct native hardware video source
+    // Smart TV engines (Tizen, webOS, Opera TV, NetFront) play HLS directly in hardware
     try {
       video.pause();
-      video.removeAttribute('src');
       video.src = url;
-      video.load(); // Required by older Smart TV engines
-
-      var playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.then(function () {
-          hideStatus();
-        }).catch(function (err) {
-          console.warn('Autoplay blocked or waiting for user interaction:', err);
-          showStatus('Press OK / Play to Start');
-        });
+      if (typeof video.load === 'function') {
+        video.load();
       }
+      safePlay();
     } catch (e) {
-      console.warn('Native video assign error:', e);
+      console.warn('Native video source set error:', e);
     }
 
-    // Fallback: If native video errors out, attempt HLS.js
-    var onNativeError = function () {
-      video.removeEventListener('error', onNativeError);
+    // Step 2: Set error listener to fall back to Hls.js if native video fails
+    function handleNativeError() {
+      video.removeEventListener('error', handleNativeError, false);
       console.log('Native playback failed, attempting HLS.js fallback...');
       fallbackToHls(url);
-    };
-    video.addEventListener('error', onNativeError, { once: true });
+    }
+    video.addEventListener('error', handleNativeError, false);
   }
 
   function fallbackToHls(url) {
@@ -287,47 +316,49 @@
   }
 
   function initHls(url) {
-    if (!window.Hls.isSupported()) {
+    if (!window.Hls || !window.Hls.isSupported()) {
       showStatus('HLS playback not supported by browser.');
       return;
     }
 
-    hlsInstance = new window.Hls({
-      enableWorker: true,
-      lowLatencyMode: true,
-      backBufferLength: 30,
-      maxBufferLength: 10,
-      maxMaxBufferLength: 20
-    });
-
-    hlsInstance.loadSource(url);
-    hlsInstance.attachMedia(video);
-
-    hlsInstance.on(window.Hls.Events.MANIFEST_PARSED, function () {
-      video.play().catch(function () {
-        showStatus('Press OK / Play to Start');
+    try {
+      hlsInstance = new window.Hls({
+        enableWorker: false, // Turn off Web Worker for maximum embedded browser compatibility
+        lowLatencyMode: true,
+        backBufferLength: 30,
+        maxBufferLength: 10,
+        maxMaxBufferLength: 20
       });
-      hideStatus();
-    });
 
-    hlsInstance.on(window.Hls.Events.ERROR, function (event, data) {
-      if (data.fatal) {
-        switch (data.type) {
-          case window.Hls.ErrorTypes.NETWORK_ERROR:
-            showStatus('Network/Stream error. Retrying...');
-            hlsInstance.startLoad();
-            break;
-          case window.Hls.ErrorTypes.MEDIA_ERROR:
-            showStatus('Media buffer error. Recovering...');
-            hlsInstance.recoverMediaError();
-            break;
-          default:
-            showStatus('Stream offline or token expired. Press Reload.');
-            hlsInstance.destroy();
-            break;
+      hlsInstance.loadSource(url);
+      hlsInstance.attachMedia(video);
+
+      hlsInstance.on(window.Hls.Events.MANIFEST_PARSED, function () {
+        safePlay();
+      });
+
+      hlsInstance.on(window.Hls.Events.ERROR, function (event, data) {
+        if (data && data.fatal) {
+          switch (data.type) {
+            case window.Hls.ErrorTypes.NETWORK_ERROR:
+              showStatus('Network/Stream error. Retrying...');
+              hlsInstance.startLoad();
+              break;
+            case window.Hls.ErrorTypes.MEDIA_ERROR:
+              showStatus('Media buffer error. Recovering...');
+              hlsInstance.recoverMediaError();
+              break;
+            default:
+              showStatus('Stream offline or token expired. Press Reload.');
+              try { hlsInstance.destroy(); } catch (e) {}
+              break;
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      console.warn('HLS init error:', e);
+      showStatus('Stream Error. Press Reload.');
+    }
   }
 
   function loadHlsLibrary(callback) {
@@ -337,7 +368,7 @@
     }
 
     var script = document.createElement('script');
-    script.src = 'hls.min.js'; // Local file for fast load & offline support
+    script.src = 'hls.min.js';
     script.async = true;
     script.onload = function () {
       callback(true);
@@ -351,7 +382,6 @@
         callback(true);
       };
       cdnScript.onerror = function () {
-        console.warn('Failed to load Hls.js from CDN.');
         callback(false);
       };
       document.head.appendChild(cdnScript);
@@ -363,7 +393,9 @@
     if (index < 0 || index >= channels.length) return;
     currentChannelIndex = index;
     var ch = channels[currentChannelIndex];
-    currentChannelNameEl.textContent = ch.name;
+    if (currentChannelNameEl) {
+      currentChannelNameEl.textContent = ch.name;
+    }
     document.title = ch.name + ' - TV Player';
     playStream(ch.url);
   }
@@ -375,12 +407,12 @@
     video.className = '';
     if (mode === 'fill') {
       video.classList.add('aspect-fill');
-      aspectLabel.textContent = 'Stretch';
+      if (aspectLabel) aspectLabel.textContent = 'Stretch';
     } else if (mode === 'cover') {
       video.classList.add('aspect-cover');
-      aspectLabel.textContent = 'Zoom';
+      if (aspectLabel) aspectLabel.textContent = 'Zoom';
     } else {
-      aspectLabel.textContent = 'Fit (16:9)';
+      if (aspectLabel) aspectLabel.textContent = 'Fit (16:9)';
     }
   }
 
@@ -404,104 +436,140 @@
   }
 
   // --- Video Event Listeners ---
-  video.addEventListener('playing', function () {
-    hideStatus();
-    playIcon.innerHTML = '&#10074;&#10074;';
-    btnPlayPause.querySelector('.btn-label').textContent = 'Pause';
-    resetOSDTimeout();
-  });
+  if (video) {
+    video.addEventListener('playing', function () {
+      hideStatus();
+      if (playIcon) playIcon.innerHTML = '&#10074;&#10074;';
+      var label = btnPlayPause ? btnPlayPause.querySelector('.btn-label') : null;
+      if (label) label.textContent = 'Pause';
+      resetOSDTimeout();
+    }, false);
 
-  video.addEventListener('pause', function () {
-    playIcon.innerHTML = '&#9658;';
-    btnPlayPause.querySelector('.btn-label').textContent = 'Play';
-    wakeOSD();
-  });
+    video.addEventListener('pause', function () {
+      if (playIcon) playIcon.innerHTML = '&#9658;';
+      var label = btnPlayPause ? btnPlayPause.querySelector('.btn-label') : null;
+      if (label) label.textContent = 'Play';
+      wakeOSD();
+    }, false);
 
-  video.addEventListener('waiting', function () {
-    showStatus('Buffering...');
-  });
+    video.addEventListener('waiting', function () {
+      showStatus('Buffering...');
+    }, false);
 
-  video.addEventListener('error', function (e) {
-    showStatus('Stream Error / Offline. Press Reload.');
-  });
+    video.addEventListener('error', function () {
+      showStatus('Stream Offline. Press Reload.');
+    }, false);
+  }
 
   // --- Button Event Listeners ---
-  btnPlayPause.addEventListener('click', function () {
-    if (video.paused) {
-      video.play();
-    } else {
-      video.pause();
-    }
-  });
+  if (btnPlayPause) {
+    btnPlayPause.onclick = function () {
+      if (video.paused) {
+        safePlay();
+      } else {
+        video.pause();
+      }
+    };
+  }
 
-  btnChannels.addEventListener('click', function () {
-    openDrawer();
-  });
+  if (btnChannels) {
+    btnChannels.onclick = function () {
+      openDrawer();
+    };
+  }
 
-  btnCloseDrawer.addEventListener('click', function () {
-    closeDrawer();
-  });
+  if (btnCloseDrawer) {
+    btnCloseDrawer.onclick = function () {
+      closeDrawer();
+    };
+  }
 
-  btnAddStream.addEventListener('click', function () {
-    openAddModal();
-  });
+  if (btnAddStream) {
+    btnAddStream.onclick = function () {
+      openAddModal();
+    };
+  }
 
-  btnCloseModal.addEventListener('click', function () {
-    closeAddModal();
-  });
+  if (btnCloseModal) {
+    btnCloseModal.onclick = function () {
+      closeAddModal();
+    };
+  }
 
-  btnCancelStream.addEventListener('click', function () {
-    closeAddModal();
-  });
+  if (btnCancelStream) {
+    btnCancelStream.onclick = function () {
+      closeAddModal();
+    };
+  }
 
-  btnSaveStream.addEventListener('click', function () {
-    saveCustomStream();
-  });
+  if (btnSaveStream) {
+    btnSaveStream.onclick = function () {
+      saveCustomStream();
+    };
+  }
 
-  btnReload.addEventListener('click', function () {
-    selectChannel(currentChannelIndex);
-  });
+  if (btnReload) {
+    btnReload.onclick = function () {
+      selectChannel(currentChannelIndex);
+    };
+  }
 
-  btnAspect.addEventListener('click', function () {
-    toggleAspectRatio();
-  });
+  if (btnAspect) {
+    btnAspect.onclick = function () {
+      toggleAspectRatio();
+    };
+  }
 
-  btnFullscreen.addEventListener('click', function () {
-    toggleFullscreen();
-  });
+  if (btnFullscreen) {
+    btnFullscreen.onclick = function () {
+      toggleFullscreen();
+    };
+  }
 
-  osdMiddleTrigger.addEventListener('click', function () {
-    if (osd.classList.contains('visible')) {
-      osd.classList.remove('visible');
-    } else {
-      wakeOSD();
-    }
-  });
+  if (osdMiddleTrigger) {
+    osdMiddleTrigger.onclick = function () {
+      if (osd && osd.classList.contains('visible')) {
+        osd.classList.remove('visible');
+      } else {
+        wakeOSD();
+      }
+    };
+  }
 
-  // Wake OSD on user interaction (mouse/virtual pointer)
-  window.addEventListener('mousemove', function () {
+  window.onmousemove = function () {
     wakeOSD();
-  });
+  };
+
+  // --- Helper: Convert NodeList to Array (Strict ES5) ---
+  function toArray(nodeList) {
+    var arr = [];
+    if (!nodeList) return arr;
+    for (var i = 0; i < nodeList.length; i++) {
+      arr.push(nodeList[i]);
+    }
+    return arr;
+  }
 
   // --- TV Remote & Keyboard Spatial Navigation ---
-  window.addEventListener('keydown', function (e) {
+  window.onkeydown = function (e) {
+    e = e || window.event;
     var key = e.key;
-    var code = e.keyCode;
+    var code = e.keyCode || e.which;
 
     wakeOSD();
 
-    // TV Remote Color Keys:
+    // TV Color Keys:
     // Red (403): Fullscreen
     // Green (404): Channel Drawer
     // Yellow (405): Reload
     // Blue (406): Aspect Ratio
     if (code === 403 || key === 'F' || key === 'f') {
-      e.preventDefault();
+      if (e.preventDefault) e.preventDefault();
       toggleFullscreen();
       return;
     }
     if (code === 404 || key === 'c' || key === 'C') {
-      e.preventDefault();
+      if (e.preventDefault) e.preventDefault();
       if (channelDrawer.classList.contains('hidden')) {
         openDrawer();
       } else {
@@ -510,33 +578,32 @@
       return;
     }
     if (code === 405 || key === 'r' || key === 'R') {
-      e.preventDefault();
+      if (e.preventDefault) e.preventDefault();
       selectChannel(currentChannelIndex);
       return;
     }
     if (code === 406 || key === 'a' || key === 'A') {
-      e.preventDefault();
+      if (e.preventDefault) e.preventDefault();
       toggleAspectRatio();
       return;
     }
 
     // Media Keys / Space: Play/Pause
     if (key === 'MediaPlayPause' || key === ' ' || code === 179 || code === 32) {
-      // Don't intercept space if focused on text input
       if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
-      e.preventDefault();
+      if (e.preventDefault) e.preventDefault();
       if (video.paused) {
-        video.play();
+        safePlay();
       } else {
         video.pause();
       }
       return;
     }
 
-    // Back / Return / Escape:
+    // Back / Return / ESC:
     // Tizen: 10009, WebOS: 461, Escape: 27, Backspace: 8
-    if (code === 27 || code === 10009 || code === 461 || (code === 8 && document.activeElement.tagName !== 'INPUT')) {
-      e.preventDefault();
+    if (code === 27 || code === 10009 || code === 461 || (code === 8 && document.activeElement && document.activeElement.tagName !== 'INPUT')) {
+      if (e.preventDefault) e.preventDefault();
       if (!modalAddStream.classList.contains('hidden')) {
         closeAddModal();
         return;
@@ -545,7 +612,6 @@
         closeDrawer();
         return;
       }
-      // If OSD is visible, hide it
       if (osd.classList.contains('visible')) {
         osd.classList.remove('visible');
       }
@@ -555,14 +621,14 @@
     // Quick channel change via Up / Down arrows if controls are hidden
     if (!osd.classList.contains('visible')) {
       if (key === 'ArrowUp' || code === 38) {
-        e.preventDefault();
-        var nextIdx = (currentChannelIndex - 1 + channels.length) % channels.length;
-        selectChannel(nextIdx);
+        if (e.preventDefault) e.preventDefault();
+        var prevIdx = (currentChannelIndex - 1 + channels.length) % channels.length;
+        selectChannel(prevIdx);
         wakeOSD();
         return;
       }
       if (key === 'ArrowDown' || code === 40) {
-        e.preventDefault();
+        if (e.preventDefault) e.preventDefault();
         var nextIdx = (currentChannelIndex + 1) % channels.length;
         selectChannel(nextIdx);
         wakeOSD();
@@ -570,38 +636,35 @@
       }
     }
 
-    // Standard D-Pad Navigation inside controls
+    // Spatial Navigation
     handleSpatialNavigation(e);
-  });
+  };
 
-  // Directional navigation helper for Smart TV Remote
   function handleSpatialNavigation(e) {
     var key = e.key;
-    var code = e.keyCode;
+    var code = e.keyCode || e.which;
 
-    // Only handle arrow keys
     if (code !== 37 && code !== 38 && code !== 39 && code !== 40 &&
         key !== 'ArrowLeft' && key !== 'ArrowUp' && key !== 'ArrowRight' && key !== 'ArrowDown') {
       return;
     }
 
-    // If modal is open, let tab/focus stay in modal
     if (!modalAddStream.classList.contains('hidden')) {
       return;
     }
 
-    // If drawer is open, handle up/down in channel list
+    // Channel drawer navigation
     if (!channelDrawer.classList.contains('hidden')) {
       var currentFocus = document.activeElement;
-      var drawerItems = Array.from(channelDrawer.querySelectorAll('.channel-item, .drawer-close-btn'));
+      var drawerItems = toArray(channelDrawer.querySelectorAll('.channel-item, .drawer-close-btn'));
       var currIndex = drawerItems.indexOf(currentFocus);
 
       if (key === 'ArrowDown' || code === 40) {
-        e.preventDefault();
+        if (e.preventDefault) e.preventDefault();
         var next = drawerItems[(currIndex + 1) % drawerItems.length];
         if (next) next.focus();
       } else if (key === 'ArrowUp' || code === 38) {
-        e.preventDefault();
+        if (e.preventDefault) e.preventDefault();
         var prev = drawerItems[(currIndex - 1 + drawerItems.length) % drawerItems.length];
         if (prev) prev.focus();
       } else if (key === 'ArrowRight' || code === 39) {
@@ -611,34 +674,36 @@
     }
 
     // Bottom controls navigation
-    var bottomBtns = Array.from(document.querySelectorAll('.controls-row .tv-btn'));
+    var bottomBtns = toArray(document.querySelectorAll('.controls-row .tv-btn'));
     var activeIdx = bottomBtns.indexOf(document.activeElement);
 
     if (activeIdx === -1) {
-      // Default to first button if none focused
-      bottomBtns[0].focus();
+      if (bottomBtns.length > 0) bottomBtns[0].focus();
       return;
     }
 
     if (key === 'ArrowRight' || code === 39) {
-      e.preventDefault();
+      if (e.preventDefault) e.preventDefault();
       var nextBtn = bottomBtns[(activeIdx + 1) % bottomBtns.length];
-      nextBtn.focus();
+      if (nextBtn) nextBtn.focus();
     } else if (key === 'ArrowLeft' || code === 37) {
-      e.preventDefault();
+      if (e.preventDefault) e.preventDefault();
       var prevBtn = bottomBtns[(activeIdx - 1 + bottomBtns.length) % bottomBtns.length];
-      prevBtn.focus();
+      if (prevBtn) prevBtn.focus();
     }
   }
 
-  // --- Start Up ---
-  loadChannels();
-  selectChannel(0);
-
-  // Set initial focus to Play button for immediate TV remote usability
-  setTimeout(function () {
-    btnPlayPause.focus();
-    resetOSDTimeout();
-  }, 500);
+  // --- Initial Startup ---
+  try {
+    loadChannels();
+    selectChannel(0);
+    setTimeout(function () {
+      if (btnPlayPause) btnPlayPause.focus();
+      resetOSDTimeout();
+    }, 500);
+  } catch (err) {
+    console.error('Startup error:', err);
+    showStatus('Startup Error: ' + err.message);
+  }
 
 })();
