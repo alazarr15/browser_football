@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TV Remote Control</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #00e676;
+      --accent-hover: #00c853;
+      --text: #ffffff;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --border: rgba(255, 255, 255, 0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .remote-card {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    header {
+      text-align: center;
+      padding: 10px 0;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .panel h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .input-with-btn {
+      display: flex;
+      gap: 8px;
+    }
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus {
+      border-color: var(--accent);
+    }
+    .btn-paste {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      color: #fff;
+      border-radius: 8px;
+      padding: 0 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-paste:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-primary:active {
+      transform: scale(0.98);
+      background: var(--accent-hover);
+    }
+    .tv-controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: #fff;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .ctrl-btn:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .presets-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .preset-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .preset-item:active {
+      background: rgba(0, 230, 118, 0.15);
+      border-color: var(--accent);
+    }
+    .preset-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .preset-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .preset-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .preset-play-icon {
+      color: var(--accent);
+      font-size: 1.1rem;
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #00e676;
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+    .room-badge {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="remote-card">
+    <header>
+      <h1><span>&#128250;</span> Smart TV Remote</h1>
+      <p>Paste any live match link on your phone to play on TV</p>
+    </header>
+
+    <!-- Send New Stream Panel -->
+    <section class="panel">
+      <h2>&#128279; Change TV Stream</h2>
+      
+      <div class="form-group">
+        <label for="stream-url">Stream URL (.m3u8)</label>
+        <div class="input-with-btn">
+          <input type="url" id="stream-url" placeholder="https://.../stream.m3u8" autocomplete="off" />
+          <button class="btn-paste" id="btn-paste-clipboard" type="button">&#128203; Paste</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="channel-name">Channel / Match Name (Optional)</label>
+        <input type="text" id="channel-name" placeholder="e.g. Live Football Match" />
+      </div>
+
+      <button class="btn-primary" id="btn-send-stream">
+        <span>&#9654;</span> Send to TV & Play
+      </button>
+    </section>
+
+    <!-- TV Playback Controls Panel -->
+    <section class="panel">
+      <h2>&#127918; TV Controls</h2>
+      <div class="tv-controls-grid">
+        <button class="ctrl-btn" id="btn-play-pause">&#10074;&#10074; Play / Pause</button>
+        <button class="ctrl-btn" id="btn-reload">&#8635; Reload Stream</button>
+        <button class="ctrl-btn" id="btn-aspect">&#x26F6; Aspect Ratio</button>
+        <button class="ctrl-btn" id="btn-fullscreen">&#x26F6; Fullscreen</button>
+      </div>
+    </section>
+
+    <!-- Quick Presets -->
+    <section class="panel">
+      <h2>&#9776; Quick Presets</h2>
+      <div class="presets-list">
+        <div class="preset-item" data-name="Live Match (USA)" data-url="https://a16.kora-plus.li/live/usa.m3u8?token=3OWrgM5SPx-MHGNNgAFcKRykUVM&exp=1789830116">
+          <div class="preset-info">
+            <span class="preset-title">Live Match (USA)</span>
+            <span class="preset-sub">Kora Plus 16</span>
+          </div>
+          <span class="preset-play-icon">&#9658;</span>
+        </div>
+
+        <div class="preset-item" data-name="TNT Sports 1" data-url="https://a14.kora-plus.li/live/tnt1.m3u8?token=g9VsgiYY9Fl6gvjzIuNFL7xSb6M&exp=1789826990">
+          <div class="preset-info">
+            <span class="preset-title">TNT Sports 1</span>
+            <span class="preset-sub">Sports Stream</span>
+          </div>
+          <span class="preset-play-icon">&#9658;</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="room-badge">
+      Connected Room: <strong id="room-name">alazar_tv_football</strong>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">&#10004; Sent to TV!</div>
+
+  <script>
+    (function() {
+      var ROOM_ID = 'alazar_tv_football';
+      var NTFY_URL = 'https://ntfy.sh/' + ROOM_ID;
+
+      var streamUrlInput = document.getElementById('stream-url');
+      var channelNameInput = document.getElementById('channel-name');
+      var btnSendStream = document.getElementById('btn-send-stream');
+      var btnPaste = document.getElementById('btn-paste-clipboard');
+      var toast = document.getElementById('toast');
+
+      var btnPlayPause = document.getElementById('btn-play-pause');
+      var btnReload = document.getElementById('btn-reload');
+      var btnAspect = document.getElementById('btn-aspect');
+      var btnFullscreen = document.getElementById('btn-fullscreen');
+
+      function showToast(msg) {
+        toast.innerHTML = '&#10004; ' + (msg || 'Sent to TV!');
+        toast.classList.add('show');
+        setTimeout(function() {
+          toast.classList.remove('show');
+        }, 2500);
+      }
+
+      // Send command to TV via Cloud Relay & Local Server
+      function sendCommand(payload) {
+        // 1. Cloud Relay (works everywhere over internet)
+        try {
+          fetch(NTFY_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Title': 'TV Remote Command' }
+          }).catch(function(e) {
+            console.warn('Cloud relay publish error:', e);
+          });
+        } catch(e) {}
+
+        // 2. Local Server Relay (if on http://192.168.x.x:8080)
+        try {
+          if (window.location.protocol === 'http:') {
+            fetch('/api/stream', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).catch(function(e) {});
+          }
+        } catch(e) {}
+
+        // 3. LocalStorage & BroadcastChannel for local test tabs
+        try {
+          localStorage.setItem('tv_remote_command', JSON.stringify({
+            cmd: payload,
+            time: Date.now()
+          }));
+        } catch(e) {}
+
+        showToast(payload.action === 'play' ? 'Playing on TV!' : 'Command sent!');
+      }
+
+      // Paste button using modern clipboard API
+      btnPaste.addEventListener('click', function() {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(function(text) {
+            if (text) {
+              streamUrlInput.value = text.trim();
+              showToast('URL Pasted!');
+            }
+          }).catch(function() {
+            streamUrlInput.focus();
+          });
+        } else {
+          streamUrlInput.focus();
+        }
+      });
+
+      // Send new stream
+      btnSendStream.addEventListener('click', function() {
+        var url = streamUrlInput.value.trim();
+        var name = channelNameInput.value.trim() || 'Live Match';
+
+        if (!url) {
+          alert('Please enter or paste a stream URL');
+          streamUrlInput.focus();
+          return;
+        }
+
+        sendCommand({
+          action: 'play',
+          url: url,
+          name: name
+        });
+      });
+
+      // Preset click handlers
+      document.querySelectorAll('.preset-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+          var url = item.getAttribute('data-url');
+          var name = item.getAttribute('data-name');
+          streamUrlInput.value = url;
+          channelNameInput.value = name;
+          sendCommand({
+            action: 'play',
+            url: url,
+            name: name
+          });
+        });
+      });
+
+      // Playback controls
+      btnPlayPause.addEventListener('click', function() {
+        sendCommand({ action: 'play_pause' });
+      });
+
+      btnReload.addEventListener('click', function() {
+        sendCommand({ action: 'reload' });
+      });
+
+      btnAspect.addEventListener('click', function() {
+        sendCommand({ action: 'aspect' });
+      });
+
+      btnFullscreen.addEventListener('click', function() {
+        sendCommand({ action: 'fullscreen' });
+      });
+
+    })();
+  </script>
+</body>
+</html>

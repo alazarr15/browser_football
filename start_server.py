@@ -33,6 +33,30 @@ class TVHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
         super().end_headers()
 
+    def do_POST(self):
+        global LIVE_STREAM_M3U8
+        if self.path == '/api/stream':
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8', errors='ignore')
+            try:
+                import json
+                data = json.loads(body)
+                if 'url' in data and data['url']:
+                    LIVE_STREAM_M3U8 = data['url'].strip()
+                    print(f"\n[Remote Control] Stream updated to: {LIVE_STREAM_M3U8}\n")
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(b'{"status":"ok"}')
+                return
+            except Exception as e:
+                self.send_response(400)
+                self.end_headers()
+                return
+
+        super().do_POST()
+
     def do_GET(self):
         # Sony Bravia KDL Native Stream Relay Endpoint
         # Relays live HLS chunks as a single continuous MPEG-TS stream (video/mp2t)

@@ -763,10 +763,89 @@
     }
   }
 
+  // --- Real-Time Phone Remote Sync Listener ---
+  function initRemoteSync() {
+    var ROOM_ID = 'alazar_tv_football';
+    var NTFY_SSE_URL = 'https://ntfy.sh/' + ROOM_ID + '/sse';
+
+    function handleRemoteAction(cmd) {
+      if (!cmd) return;
+      console.log('[Remote Sync] Command received:', cmd);
+
+      if (cmd.action === 'play' && cmd.url) {
+        var newCh = {
+          id: 'remote_' + new Date().getTime(),
+          name: cmd.name || 'Remote Stream',
+          url: cmd.url,
+          category: 'Remote'
+        };
+        channels.unshift(newCh);
+        saveChannels();
+        selectChannel(0);
+        showStatus('📱 Stream updated from Phone Remote!');
+        setTimeout(hideStatus, 4000);
+      } else if (cmd.action === 'play_pause') {
+        if (video.paused) {
+          safePlay();
+        } else {
+          video.pause();
+        }
+      } else if (cmd.action === 'reload') {
+        selectChannel(currentChannelIndex);
+      } else if (cmd.action === 'aspect') {
+        toggleAspectRatio();
+      } else if (cmd.action === 'fullscreen') {
+        toggleFullscreen();
+      }
+    }
+
+    // 1. EventSource (SSE from ntfy.sh cloud broker)
+    if (typeof window.EventSource !== 'undefined') {
+      try {
+        var es = new EventSource(NTFY_SSE_URL);
+        es.onmessage = function (e) {
+          try {
+            var data = JSON.parse(e.data);
+            var payload = null;
+            if (typeof data.message === 'string') {
+              try {
+                payload = JSON.parse(data.message);
+              } catch (err) {
+                payload = { action: 'play', url: data.message };
+              }
+            } else if (data.cmd) {
+              payload = data.cmd;
+            }
+            if (payload) {
+              handleRemoteAction(payload);
+            }
+          } catch (err) {
+            console.warn('[Remote Sync] Parse error:', err);
+          }
+        };
+      } catch (e) {
+        console.warn('[Remote Sync] EventSource failed:', e);
+      }
+    }
+
+    // 2. LocalStorage Storage event (for same device / tab sync)
+    window.addEventListener('storage', function (e) {
+      if (e.key === 'tv_remote_command' && e.newValue) {
+        try {
+          var item = JSON.parse(e.newValue);
+          if (item && item.cmd) {
+            handleRemoteAction(item.cmd);
+          }
+        } catch (err) {}
+      }
+    }, false);
+  }
+
   // --- Initial Startup ---
   try {
     loadChannels();
     selectChannel(0);
+    initRemoteSync();
     setTimeout(function () {
       if (btnPlayPause) btnPlayPause.focus();
       resetOSDTimeout();
